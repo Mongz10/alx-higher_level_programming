@@ -1,39 +1,41 @@
-#!/usr/bin/python3
-"""This documents gather stats from stdin"""
-import sys
+#!/bin/bash
 
+# Initialize variables
+total_size=0
+declare -A status_counts
 
-def print_pretty(size, code_dict):
-    """parse important data"""
-    print("File size: {}".format(size))
-    for key, value in sorted(code_dict.items()):
-        if (value != 0):
-            print("{}: {}".format(key, value))
+# Function to print statistics
+print_statistics() {
+    echo "Total file size: File size: $total_size"
+    for code in 200 301 400 401 403 404 405 500; do
+        count=${status_counts[$code]}
+        if [ -n "$count" ]; then
+            echo "$code: $count"
+        fi
+    done
+}
 
-if __name__ == '__main__':
-    """init code to print the parsed data"""
-    size = 0
-    code_dict = {
-        "200": 0,
-        "301": 0,
-        "400": 0,
-        "401": 0,
-        "403": 0,
-        "404": 0,
-        "405": 0,
-        "500": 0
-    }
-    try:
-        line_counter = 0
-        for line in sys.stdin:
-            line_counter += 1
-            code = line.split()[7]
-            size += int(line.split()[8])
-            if code in code_dict:
-                code_dict[code] += 1
-            if (line_counter % 10 == 0):
-                print_pretty(size, code_dict)
-        print_pretty(size, code_dict)
-    except KeyboardInterrupt:
-        print_pretty(size, code_dict)
-        raise
+# Trap Ctrl+C to print statistics
+trap 'print_statistics' INT
+
+# Read input line by line
+while read -r line; do
+    # Extract file size and status code
+    file_size=$(echo "$line" | awk '{print $NF}')
+    status_code=$(echo "$line" | awk '{print $(NF-1)}')
+
+    # Update total size
+    total_size=$((total_size + file_size))
+
+    # Update status code count
+    ((status_counts[$status_code]++))
+
+    # Print statistics every 10 lines
+    if ((++line_count % 10 == 0)); then
+        print_statistics
+    fi
+done
+
+# Print final statistics
+print_statistics
+
