@@ -1,76 +1,39 @@
 #!/usr/bin/python3
-"""Reads from standard input and computes metrics"""
-
-from typing import Dict, List, Tuple
-
-VALID_CODES = {"200", "301", "400", "401", "403", "404", "405", "500"}
+"""This documents gather stats from stdin"""
+import sys
 
 
-def print_stats(size: int, status_codes: Dict[str, int]) -> None:
-    """
-    Print accumulated metrics.
-
-    Args:
-        size (int): Total file size.
-        status_codes (Dict[str, int]): Dictionary containing status codes
-        and their counts.
-    """
+def print_pretty(size, code_dict):
+    """parse important data"""
     print("File size: {}".format(size))
-    for key in sorted(status_codes):
-        print("{}: {}".format(key, status_codes[key]))
+    for key, value in sorted(code_dict.items()):
+        if (value != 0):
+            print("{}: {}".format(key, value))
 
-
-def process_line(
-    line: List[str], size: int, status_codes: Dict[str, int]
-) -> Tuple[int, Dict[str, int]]:
-    """
-    Process a single line and update metrics.
-
-    Args:
-        line (List[str]): List of strings representing a line.
-        size (int): Current total file size.
-        status_codes (Dict[str, int]): Dictionary containing status codes
-        and their counts.
-
-    Returns:
-        Tuple[int, Dict[str, int]]: Updated size and status_codes.
-    """
-    try:
-        size += int(line[-1])
-    except (IndexError, ValueError):
-        pass
-
-    try:
-        if line[-2] in VALID_CODES:
-            status_codes[line[-2]] = status_codes.get(line[-2], 0) + 1
-    except IndexError:
-        pass
-
-    return size, status_codes
-
-
-def process_input() -> None:
-    """Reads from standard input, processes lines, and prints metrics."""
+if __name__ == '__main__':
+    """init code to print the parsed data"""
     size = 0
-    status_codes: Dict[str, int] = {}
-    count = 0
-
+    code_dict = {
+        "200": 0,
+        "301": 0,
+        "400": 0,
+        "401": 0,
+        "403": 0,
+        "404": 0,
+        "405": 0,
+        "500": 0
+    }
     try:
+        line_counter = 0
         for line in sys.stdin:
-            count = (count + 1) % 10
-            size, status_codes = process_line(line.split(), size, status_codes)
-
-            if count == 0:
-                print_stats(size, status_codes)
-
-        print_stats(size, status_codes)
-
+            line_counter += 1
+            code = line.split()[7]
+            size += int(line.split()[8])
+            if code in code_dict:
+                code_dict[code] += 1
+            if (line_counter % 10 == 0):
+                print_pretty(size, code_dict)
+        print_pretty(size, code_dict)
     except KeyboardInterrupt:
-        print_stats(size, status_codes)
+        print_pretty(size, code_dict)
         raise
-
-
-if __name__ == "__main__":
-    import sys
-
-    process_input()
