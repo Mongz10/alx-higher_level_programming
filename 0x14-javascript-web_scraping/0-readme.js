@@ -1,4 +1,4 @@
-#!/usr/bin/node
+#!/usr/bin/node
 // Read from file
 
 const filesys = require('fs');
